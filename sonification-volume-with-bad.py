@@ -1,12 +1,12 @@
 import csv
 import math
 from midiutil.MidiFile import MIDIFile
+from random import random
 
 m = MIDIFile(1)
 m.addTrackName(0, 0, "LANL Login Activity")
 m.addTempo(0, 0, 80)
 
-"""
 b2 = 35
 c2 = 36
 d2 = 38
@@ -14,15 +14,6 @@ e2 = 40
 f2 = 41
 g2 = 43
 a3 = 45
-"""
-b1 = 35
-c2 = 36
-d2 = 38
-e2 = 40
-f2 = 41
-g2 = 43
-a3 = 45
-
 b4 = 59
 c4 = 60
 d4 = 62
@@ -40,13 +31,17 @@ g_arp = [ b4, d4, g4, b5 ]
 pattern = c_arp + c_arp + f_arp + f_arp + g_arp + g_arp + c_arp + c_arp
 arp_channel = 1
 
+seventh_pattern = [ c4 + 11, f4 + 11, g4 + 11, c4 + 11 ]
+seventh_channel = 2
+
 c_chord = [ c2, e2, g2 ]
 f_chord = [ c2, f2, a3 ]
-g_chord = [ b1, d2, g2 ]
+g_chord = [ b2, d2, g2 ]
 
 chord_pattern = [ c_chord, f_chord, g_chord, c_chord ]
 chord_channel = 0
 
+base_prob = 3.854e-6
 whole_note = 4.0
 eighth_note = whole_note / 8.0
 min_volume = 20
@@ -76,6 +71,13 @@ with open("quarter-hour-chunked.csv", "r") as csv_file:
 	csv_reader = csv.reader(csv_file)
 	for row in csv_reader:
 		value = int(row[0])
+
+		prob = value * base_prob
+		bad_login = random() < prob
+		if bad_login:
+			print("Do the things!")
+			m.addNote(0, seventh_channel, seventh_pattern[int(current_note / 8) % len(seventh_pattern)], beat, eighth_note, chord_volume)
+
 		m.addNote(0, arp_channel, pattern[current_note], beat, eighth_note, getVolume(value))
 		current_note = (current_note + 1) % len(pattern)
 		if beat % 4 == 0:
@@ -86,5 +88,5 @@ with open("quarter-hour-chunked.csv", "r") as csv_file:
 		beat += eighth_note
 
 # write MIDI output
-with open("logins.mid", "wb") as f:
+with open("logins-with-bad.mid", "wb") as f:
 	m.writeFile(f)
